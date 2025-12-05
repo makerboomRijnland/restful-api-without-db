@@ -40,15 +40,31 @@ async function loadPosts() {
 
 function showPost(post) {
     const postsList = document.getElementById('posts-list');
-    postsList.innerHTML += `
-        <div class="post-item" data-id="${post.id}">
-            <aside><button class="edit">&#x1F58B;</button><button class="delete">&#x1F5D1;</button></aside>
-            <h3>${post.name}</h3>
-            <p><a href="${post.url}" target="_blank">${post.url}</a></p>
-            <p>${post.text}</p>
-            ${post.comments ? `<p><em>${post.comments.length} reacties</em></p>` : ''}
-        </div>
-    `;
+    /** @type {HTMLTemplateElement} */
+    const postTemplate = document.querySelector("#post-template");
+    const postClone = postTemplate.content.cloneNode(true);
+
+    postClone.querySelector('.name').innerHTML = post.name;
+    postClone.querySelector('.text').innerHTML = post.text;
+
+    postClone.querySelector('.url a').innerHTML = post.url;
+    postClone.querySelector('.url a').href = post.url;
+
+    if(post.comments) {
+        postClone.querySelector('.comments').innerHTML = `${post.comments.length} reacties`;
+    }
+
+    postsList.appendChild(postClone);
+
+    // postsList.innerHTML += `
+    //     <div class="post-item" data-id="${post.id}">
+    //         <aside><button class="edit">&#x1F58B;</button><button class="delete">&#x1F5D1;</button></aside>
+    //         <h3>${post.name}</h3>
+    //         <p><a href="${post.url}" target="_blank">${post.url}</a></p>
+    //         <p>${post.text}</p>
+    //         ${post.comments ? `<p><em>${post.comments.length} reacties</em></p>` : ''}
+    //     </div>
+    // `;
 }
 
 // Add new post
