@@ -42,3 +42,5 @@ app.delete('/posts/:postId/comments/:commentId', routes.comments.removeComment)
 
 
 app.listen(3000)
+
+console.log(`Server is listening on: http://localhost:3000`);

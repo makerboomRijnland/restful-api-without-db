@@ -15,6 +15,8 @@ async function loadPosts() {
         const response = await fetch(`${API_BASE}/posts`);
         const posts = await response.json();
 
+        throw new Error("Hellepie!");
+
         if (posts.length === 0) {
             postsList.innerHTML = '<p>Geen posts gevonden.</p>';
             return;
@@ -27,7 +29,13 @@ async function loadPosts() {
             showPost(post);
         }
     } catch (error) {
-        postsList.innerHTML = `<div class="error">Fout bij laden van posts: ${error.message}</div>`;
+        const errorTemplate = document.querySelector("#error-template");
+        const errorClone = errorTemplate.content.cloneNode(true);
+
+        errorClone.querySelector(".error").innerHTML = `Fout bij laden van posts: ${error.message}`;
+        postsList.replaceChildren(errorClone);
+
+        // postsList.innerHTML = `<div class="error">Fout bij laden van posts: ${error.message}</div>`;
         console.error('Error loading posts:', error);
     }
 }
