@@ -2,119 +2,125 @@ const API_BASE = 'http://localhost:3000';
 
 // Load posts on page load
 document.addEventListener('DOMContentLoaded', () => {
-    loadPosts();
-    document.getElementById('add-post-form').addEventListener('submit', addPost);
+    new BlogPosts();
 });
 
-// Load and display posts
-async function loadPosts() {
-    const postsList = document.getElementById('posts-list');
-    postsList.innerHTML = '<div class="loading">Posts laden...</div>';
+class BlogPosts {
+    constructor() {
+        this.loadPosts();
+        document.getElementById('add-post-form')
+            .addEventListener('submit', (event) => this.addPost(event) );
+    }
 
-    try {
-        const response = await fetch(`${API_BASE}/posts`);
-        const posts = await response.json();
+    async loadPosts() {
+        const postsList = document.getElementById('posts-list');
+        postsList.innerHTML = '<div class="loading">Posts laden...</div>';
 
-        if (posts.length === 0) {
-            postsList.innerHTML = '<p>Geen posts gevonden.</p>';
-            return;
+        try {
+            const response = await fetch(`${API_BASE}/posts`);
+            const posts = await response.json();
+
+            if (posts.length === 0) {
+                postsList.innerHTML = '<p>Geen posts gevonden.</p>';
+                return;
+            }
+
+            postsList.innerHTML = "";
+            let id = 0;
+            for (let post of posts) {
+                post.id = id++;
+                this.showPost(post);
+            }
+        } catch (error) {
+            const errorTemplate = document.querySelector("#error-template");
+            const errorClone = errorTemplate.content.cloneNode(true);
+
+            errorClone.querySelector(".error").innerHTML = `Fout bij laden van posts: ${error.message}`;
+            postsList.replaceChildren(errorClone);
+
+            // postsList.innerHTML = `<div class="error">Fout bij laden van posts: ${error.message}</div>`;
+            console.error('Error loading posts:', error);
         }
+    }
 
-        postsList.innerHTML = "";
-        let id = 0;
-        for(let post of posts) {
-            post.id = id++; 
+    async addPost(event) {
+        event.preventDefault();
+
+        const post = {
+            name: document.getElementById('post-name').value,
+            url: document.getElementById('post-url').value,
+            text: document.getElementById('post-text').value
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/posts`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(post)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            post.id = result.id;
+
+            // Clear form
+            document.getElementById('add-post-form').reset();
+
+            // Show success message
+            this.showMessage('Post succesvol toegevoegd!', 'success');
+
+            // Show post
             showPost(post);
+        } catch (error) {
+            this.showMessage(`Fout bij toevoegen van post: ${error.message}`, 'error');
+            console.error('Error adding post:', error);
         }
-    } catch (error) {
-        const errorTemplate = document.querySelector("#error-template");
-        const errorClone = errorTemplate.content.cloneNode(true);
-
-        errorClone.querySelector(".error").innerHTML = `Fout bij laden van posts: ${error.message}`;
-        postsList.replaceChildren(errorClone);
-
-        // postsList.innerHTML = `<div class="error">Fout bij laden van posts: ${error.message}</div>`;
-        console.error('Error loading posts:', error);
-    }
-}
-
-function showPost(post) {
-    const postsList = document.getElementById('posts-list');
-    /** @type {HTMLTemplateElement} */
-    const postTemplate = document.querySelector("#post-template");
-    const postClone = postTemplate.content.cloneNode(true);
-
-    postClone.querySelector('.name').innerHTML = post.name;
-    postClone.querySelector('.text').innerHTML = post.text;
-
-    postClone.querySelector('.url a').innerHTML = post.url;
-    postClone.querySelector('.url a').href = post.url;
-
-    if(post.comments) {
-        postClone.querySelector('.comments').innerHTML = `${post.comments.length} reacties`;
     }
 
-    postsList.appendChild(postClone);
+    showPost(post) {
+        const postsList = document.getElementById('posts-list');
+        /** @type {HTMLTemplateElement} */
+        const postTemplate = document.querySelector("#post-template");
+        const postClone = postTemplate.content.cloneNode(true);
 
-    // postsList.innerHTML += `
-    //     <div class="post-item" data-id="${post.id}">
-    //         <aside><button class="edit">&#x1F58B;</button><button class="delete">&#x1F5D1;</button></aside>
-    //         <h3>${post.name}</h3>
-    //         <p><a href="${post.url}" target="_blank">${post.url}</a></p>
-    //         <p>${post.text}</p>
-    //         ${post.comments ? `<p><em>${post.comments.length} reacties</em></p>` : ''}
-    //     </div>
-    // `;
-}
+        postClone.querySelector('.name').innerHTML = post.name;
+        postClone.querySelector('.text').innerHTML = post.text;
 
-// Add new post
-async function addPost(event) {
-    event.preventDefault();
+        postClone.querySelector('.url a').innerHTML = post.url;
+        postClone.querySelector('.url a').href = post.url;
 
-    const post = {
-        name: document.getElementById('post-name').value,
-        url: document.getElementById('post-url').value,
-        text: document.getElementById('post-text').value
-    };
-
-    try {
-        const response = await fetch(`${API_BASE}/posts`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(post)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (post.comments) {
+            postClone.querySelector('.comments').innerHTML = `${post.comments.length} reacties`;
         }
 
-        const result = await response.json();
-        post.id = result.id;
-        
-        // Clear form
-        document.getElementById('add-post-form').reset();
-        
-        // Show success message
-        showMessage('Post succesvol toegevoegd!', 'success');
-        
-        // Show post
-        showPost(post);
-    } catch (error) {
-        showMessage(`Fout bij toevoegen van post: ${error.message}`, 'error');
-        console.error('Error adding post:', error);
+        postsList.appendChild(postClone);
+
+        // postsList.innerHTML += `
+        //     <div class="post-item" data-id="${post.id}">
+        //         <aside><button class="edit">&#x1F58B;</button><button class="delete">&#x1F5D1;</button></aside>
+        //         <h3>${post.name}</h3>
+        //         <p><a href="${post.url}" target="_blank">${post.url}</a></p>
+        //         <p>${post.text}</p>
+        //         ${post.comments ? `<p><em>${post.comments.length} reacties</em></p>` : ''}
+        //     </div>
+        // `;
+    }
+
+    showMessage(message, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = type;
+        messageDiv.textContent = message;
+        document.querySelector('.container').insertBefore(messageDiv, document.querySelector('.section:first-child'));
+
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 3000);
     }
 }
 
-// Show message
-function showMessage(message, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = type;
-    messageDiv.textContent = message;
-    document.querySelector('.container').insertBefore(messageDiv, document.querySelector('.section:first-child'));
-    
-    setTimeout(() => {
-        messageDiv.remove();
-    }, 3000);
-}
+
