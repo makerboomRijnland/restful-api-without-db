@@ -15,8 +15,6 @@ async function loadPosts() {
         const response = await fetch(`${API_BASE}/posts`);
         const posts = await response.json();
 
-        throw new Error("Hellepie!");
-
         if (posts.length === 0) {
             postsList.innerHTML = '<p>Geen posts gevonden.</p>';
             return;
